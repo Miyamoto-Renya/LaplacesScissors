@@ -1,0 +1,20 @@
+# Local Python bytecode
+__pycache__/
+*.pyc
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+
+# Build products and model data belong in external caches
+/target/
+/.cache/
+*.safetensors
+*.gguf
+*.cubin
+*.hsaco
+
+# Editor and operating-system files
+.DS_Store
+*.swp

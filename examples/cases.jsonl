@@ -1,0 +1,2 @@
+{"id":"logic-insufficient","family":"user_logic","prompt":"Alice is taller than Bob. Carol is shorter than Alice. Who is taller, Bob or Carol? Reply with the answer only.","choices":["Bob","Carol","Cannot be determined"],"expected":2,"oracle":{"rule":"The relation between Bob and Carol is unspecified."}}
+{"id":"conditional-copy","family":"user_condition","prompt":"If the switch is ON, copy the code RED. If it is OFF, copy BLUE. The switch is OFF. Reply with the code only.","choices":["RED","BLUE"],"expected":1,"oracle":{"switch":"OFF","required_code":"BLUE"}}

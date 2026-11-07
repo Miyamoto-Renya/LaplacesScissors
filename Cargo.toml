@@ -1,0 +1,38 @@
+[package]
+name = "laplaces-scissors"
+version = "0.1.0"
+edition = "2024"
+description = "Protected readout rotations for open LLM weights"
+license = "MIT"
+repository = "https://github.com/Miyamoto-Renya/LaplacesScissors"
+readme = "README.md"
+keywords = ["llm", "model-editing", "interpretability", "triton", "gpu"]
+
+[lib]
+name = "laplace"
+path = "src/lib.rs"
+
+[[bin]]
+name = "laplace"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+sha2 = "0.10"
+hex = "0.4"
+memmap2 = "0.9"
+safetensors = "0.8"
+tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+libloading = "0.9"
+half = "2"
+nalgebra = "0.34"
+minijinja = { version = "2", features = ["builtins", "json"] }
+minijinja-contrib = { version = "2", features = ["pycompat"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
