@@ -13,7 +13,7 @@
 
 Rust · Triton · CUDA / HIP · Readout rotation
 
-[한국어](#korean) · [English](#english) · [수식과 설계](DESIGN.md) · [작업 규칙](AGENTS.md)
+[한국어](#korean) · [English](#english) · [설계 · Design](DESIGN.md) · [작업 규칙 · AGENTS.md](AGENTS.md)
 
 ```mermaid
 flowchart LR
@@ -24,20 +24,22 @@ flowchart LR
     E --> F[Generate or export]
 ```
 
-## 명령
+## 명령 · Commands
 
-| 명령 | 하는 일 | 결과 |
+| 명령 · Command | 하는 일 · Purpose | 결과 · Output |
 | --- | --- | --- |
-| `fetch`, `inspect` | 모델 확보와 구조 확인 | revision, 파일 해시, 실행 그래프 |
-| `probe` | 수치 입력에서 약한 구별 방향을 추적 | 층별 상쇄, 좌표 기여, 보호 회전 |
-| `diagnose` | 정답 사례로 출력 회전을 계산 | GPU로 확인한 후보와 채택 수정안 |
-| `generate` | 원본 또는 수정 모델로 생성 | Greedy 답변 |
-| `export` | 수정안을 체크포인트로 저장 | 수정한 출력 행렬과 모델 파일 |
-| `scale` | 같은 수정 정책을 규모별로 적용 | 손실 곡선, 편차 회복량, 가중치 기여 |
+| `fetch`, `inspect` | 모델 확보와 구조 확인<br>Fetch a model and inspect its structure | revision, 파일 해시, 실행 그래프<br>Pinned revision, file hashes, execution graph |
+| `probe` | 수치 입력에서 약한 구별 방향을 추적<br>Trace weak discrimination directions | 층별 상쇄, 좌표 기여, 보호 회전<br>Layer cancellation, coordinates, protected rotation |
+| `diagnose` | 정답 사례로 출력 회전을 계산<br>Repair outputs from expected answers | GPU로 확인한 후보와 채택 수정안<br>GPU-checked candidates and the accepted proposal |
+| `generate` | 원본 또는 수정 모델로 생성<br>Generate with the original or edited model | Greedy 답변<br>Greedy answer |
+| `export` | 수정안을 체크포인트로 저장<br>Save an edit as a checkpoint | 수정한 출력 행렬과 모델 파일<br>Edited output matrix and model files |
+| `scale` | 같은 수정 정책을 규모별로 적용<br>Apply one edit policy across scales | 손실 곡선, 편차 회복량, 가중치 기여<br>Loss curves, recovered deviation, weight contributions |
 
-## 빠른 시작
+## 빠른 시작 · Quick start
 
 Rust toolchain, Triton 3.8을 불러올 수 있는 Python, CUDA 또는 HIP 드라이버를 준비합니다. Python은 Triton 컴파일 연결을 담당하고, 모델 적재·tokenizer·실행·수정안 계산·결과 저장은 Rust가 수행합니다.
+
+Prepare a Rust toolchain, a Python environment that can import Triton 3.8, and a CUDA or HIP driver. Python provides the Triton compilation bridge. Rust handles model loading, tokenization, execution, edit computation, and result storage.
 
 ```sh
 export LAPLACE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/laplaces-scissors"
@@ -53,9 +55,15 @@ cargo run --release -- generate Qwen/Qwen3-0.6B \
 
 `.cargo/config.toml`은 Cargo 산출물을 프로젝트 밖으로 보냅니다. `LAPLACE_CACHE`에는 모델·커널·실행 결과를 저장합니다. `LAPLACE_BACKEND=auto|cuda|hip`와 `LAPLACE_DEVICE`로 backend와 장치 번호를 고릅니다. 드라이버 경로는 `LAPLACE_DRIVER_LIBRARY`, ROCm SDK 경로는 `ROCM_PATH` 또는 `HIP_PATH`입니다. HIP backend는 선택한 Python 환경의 `rocm-sdk-core` 패키지도 조회합니다. 장치 이름과 실행 대상은 드라이버에서 읽습니다.
 
+`.cargo/config.toml` places Cargo build artifacts outside the project. `LAPLACE_CACHE` stores models, kernels, and run results. Select the backend and device index with `LAPLACE_BACKEND=auto|cuda|hip` and `LAPLACE_DEVICE`. Set `LAPLACE_DRIVER_LIBRARY` for the driver library path, or `ROCM_PATH` / `HIP_PATH` for the ROCm SDK. The HIP backend also checks the selected Python environment for the `rocm-sdk-core` package. Device names and execution targets come from the driver.
+
 모델 입력은 `조직/모델`, `조직/모델@revision`, Hugging Face 모델 URL 또는 safetensors 모델 폴더입니다. Hub 입력은 commit SHA로 고정되며 파일별 SHA256이 기록됩니다. `--revision`으로 revision을 지정하고, 인증은 `HF_TOKEN`을 사용합니다.
 
+Model inputs accept `organization/model`, `organization/model@revision`, a Hugging Face model URL, or a local safetensors model directory. Hub inputs are pinned to a commit SHA, with SHA256 recorded for each file. Use `--revision` to select a revision and `HF_TOKEN` for authentication.
+
 사례 한 줄은 다음 형식입니다. `expected`는 `choices`의 0부터 시작하는 정답 위치입니다.
+
+One case is one JSON line. `expected` is the zero-based index of the correct entry in `choices`.
 
 ```json
 {"id":"sum","prompt":"What is 2 + 2? Reply with the number only.","choices":["3","4","5"],"expected":1,"oracle":{"sum":4}}
