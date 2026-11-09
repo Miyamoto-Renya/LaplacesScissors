@@ -67,11 +67,11 @@ $$
 
 Both states then have equal norms, and injection differences have equal magnitude across search directions. Earlier positions receive fixed mixtures of embedding rows directly. Input row indices, reference state, basis, angle, and injection position are saved together. [`src/injection.rs`](src/injection.rs) selects embedding-row pairs using a seed, constructs the reference state from their sum, and constructs the search basis by orthogonally projecting their differences. Both mixing coefficients are $1/\sqrt2$. The rank of embedding differences determines the actual basis size. `probe` loads weights and execution settings and runs numerical inputs through `Model::inject`. The prompt and expected answer string in `Case` belong to the `diagnose` input path. Both input paths use the same decoder operations.
 
-For output scores $z_\pm$, probabilities $p_\pm=\operatorname{softmax}(z_\pm)$, and differences $\delta z=z_+-z_-$ and $\delta p=p_+-p_-$, define divergence as
+For output scores $z_\pm$, probabilities $p_\pm=\mathrm{softmax}\,(z_\pm)$, and differences $\delta z=z_+-z_-$ and $\delta p=p_+-p_-$, define divergence as
 
 $$
 \mathcal D
-=\operatorname{KL}(p_+\Vert p_-)+\operatorname{KL}(p_-\Vert p_+)
+=\mathrm{KL}\,(p_+\Vert p_-)+\mathrm{KL}\,(p_-\Vert p_+)
 =\delta p^T\delta z.
 $$
 
@@ -79,7 +79,7 @@ Both runs use the same softmax support and temperature. Define the logarithmic p
 
 $$
 \ell_i=\frac{p_{+,i}-p_{-,i}}{\log p_{+,i}-\log p_{-,i}},\qquad
-S=\operatorname{diag}(\ell)-\frac{\ell\ell^T}{\mathbf1^T\ell}
+S=\mathrm{diag}\,(\ell)-\frac{\ell\ell^T}{\mathbf1^T\ell}
 $$
 
 In real arithmetic, $\delta p=S\delta z$ and $\mathcal D=\delta z^TS\delta z$ hold exactly. The logarithmic mean of equal probabilities is that probability. The derivation uses $\delta\log p_i=\delta z_i-\delta\log Z$, $\delta p_i=\ell_i\delta\log p_i$, and $\sum_i\delta p_i=0$, giving $\delta\log Z=\ell^T\delta z/(\mathbf1^T\ell)$. A product with $S$ requires a diagonal product and two inner products, so time and storage are linear in vocabulary size. Nearby probabilities use log-softmax differences and the continuous limit of `expm1`.
@@ -89,18 +89,18 @@ In real arithmetic, $\delta p=S\delta z$ and $\mathcal D=\delta z^TS\delta z$ ho
 Let $Y=[\delta z_1,\ldots,\delta z_r]$ collect score differences measured along search basis vectors $v_1,\ldots,v_r$, with reference probabilities $p_0$. Form the small matrix
 
 $$
-K=Y^T\bigl(\operatorname{diag}(p_0)-p_0p_0^T\bigr)Y
+K=Y^T\bigl(\mathrm{diag}\,(p_0)-p_0p_0^T\bigr)Y
 $$
 
 Its minimum eigenvector $c$ proposes the next injection direction $v=\sum_i c_iv_i$. This eigenproblem is a local model comparing linear combinations of recorded basis responses. Two actual decoder runs remeasure the selected direction to obtain finite $\mathcal D$. The direction with the smaller measured divergence is selected by comparison with the minimum observed basis divergence. Direction search uses $2r$ executions at the injection position and an $r\times r$ eigenproblem. Layer tracing uses observations from the selected pair of runs.
 
 ### Residual branches and coordinate contributions
 
-Write the linear parts of attention and MLP outputs as $B_b a_b$. The final residual difference between two runs is $\delta r_L=\delta x+\sum_b B_b\delta a_b$. Fixed projection biases add the same value in both runs. For final RMSNorm $N(r)=\operatorname{diag}(g)r/s$, $s=\sqrt{\|r\|^2/d+\eta}$, use the following finite-difference matrix at the two endpoints:
+Write the linear parts of attention and MLP outputs as $B_b a_b$. The final residual difference between two runs is $\delta r_L=\delta x+\sum_b B_b\delta a_b$. Fixed projection biases add the same value in both runs. For final RMSNorm $N(r)=\mathrm{diag}\,(g)r/s$, $s=\sqrt{\|r\|^2/d+\eta}$, use the following finite-difference matrix at the two endpoints:
 
 $$
 \bar r=\tfrac12(r_++r_-),\qquad
-T_N=\operatorname{diag}(g)\left[
+T_N=\mathrm{diag}\,(g)\left[
 \tfrac12(s_+^{-1}+s_-^{-1})I
 -\frac{2\bar r\bar r^T}{d\,s_+s_-(s_++s_-)}\right].
 $$
@@ -116,7 +116,7 @@ This identity decomposes the fixed endpoint pair’s output divergence into sign
 
 ### Protected rotations that increase divergence
 
-The edit direction is chosen to increase divergence between the selected final hidden states $h_\pm$. The protected subspace $C$ contains original protected vectors, numerical control states, and $\bar h=(h_++h_-)/2$. Let $P_C$ project onto its orthogonal complement and let $F_\pm=\operatorname{diag}(p_\pm)-p_\pm p_\pm^T$. Define
+The edit direction is chosen to increase divergence between the selected final hidden states $h_\pm$. The protected subspace $C$ contains original protected vectors, numerical control states, and $\bar h=(h_++h_-)/2$. Let $P_C$ project onto its orthogonal complement and let $F_\pm=\mathrm{diag}\,(p_\pm)-p_\pm p_\pm^T$. Define
 
 $$
 a_h=P_C(h_+-h_-),\qquad
@@ -157,7 +157,7 @@ From $J^T=-J$, $J^2=-P$, and $P^2=P$, we obtain $Q^TQ=I$. The following identiti
 
 $$
 W'C=WC,\qquad W'W'^T=WW^T,\qquad
-\operatorname{rank}(W'-W)\le2.
+\mathrm{rank}\,(W'-W)\le2.
 $$
 
 Full-vocabulary scores at protected prefixes and inner products between output rows are preserved. The rotation acts within the plane spanned by $u,v$. [`src/rotation.rs`](src/rotation.rs) builds the protected-space basis with two orthogonal-projection passes and a relative rank threshold of $10^{-10}$.
@@ -185,7 +185,7 @@ $$
 K=J\Pi J^T.
 $$
 
-For the linear constraints $J\Delta w=r,\ B\Delta w=0$ with $r\in\operatorname{range}(K)$,
+For the linear constraints $J\Delta w=r,\ B\Delta w=0$ with $r\in\mathrm{range}\,(K)$,
 
 $$
 \lambda=K^\dagger r,\qquad
@@ -212,7 +212,7 @@ Summing these terms across layers produces the same Gram matrix as an explicit w
 
 ### Joint readout rotations
 
-The same response expression applies directly to the current readout rotation. Using $\bar d_i,\bar h_i$ projected onto the protected subspace’s orthogonal complement, form $A_i=\bar d_i\bar h_i^T-\bar h_i\bar d_i^T$. With the skew-symmetric inner product $\langle A,B\rangle=\tfrac12\operatorname{tr}(A^TB)$,
+The same response expression applies directly to the current readout rotation. Using $\bar d_i,\bar h_i$ projected onto the protected subspace’s orthogonal complement, form $A_i=\bar d_i\bar h_i^T-\bar h_i\bar d_i^T$. With the skew-symmetric inner product $\langle A,B\rangle=\tfrac12\mathrm{tr}\,(A^TB)$,
 
 $$
 K_{ij}
@@ -237,27 +237,27 @@ Joint search reduces computation using a fixed basis $U\in\mathbb R^{d\times r}$
 $$
 z_R=z_0+F(R-I)x,\qquad
 \mathcal E(R)=\|W'-W\|_F^2
-=\operatorname{tr}((R-I)^TG(R-I))
-=2\operatorname{tr}G-2\operatorname{tr}(GR).
+=\mathrm{tr}\,((R-I)^TG(R-I))
+=2\mathrm{tr}\,G-2\mathrm{tr}\,(GR).
 $$
 
 These identities require $U^TU=I$ and $R^TR=I$. While the basis and original weights remain fixed, $F,G,z_0,x$ are shared. Initial Gram construction costs $O(Vr^2)$; subsequent stable quadratic-form costs take $O(r^3)$, and trace costs take $O(r^2)$. The matrix width for output evaluation falls from $d$ to $r$. For small rotations, the quadratic form directly computes the small positive change. Measurements from the original readout check GPU F32 multiplication-order and storage-rounding errors.
 
 ### Reducing the Cayley system
 
-The joint direction $\Omega=\sum_i\lambda_i(d_ix_i^T-x_id_i^T)$ factors as $\Omega=SJS^T$, where $a_i=\sqrt{|\lambda_i|}d_i$, $b_i=\operatorname{sgn}(\lambda_i)\sqrt{|\lambda_i|}x_i$, $S=[a_1,\ldots,a_m,b_1,\ldots,b_m]$, and $J=\begin{pmatrix}0&I\\-I&0\end{pmatrix}$. Let $K=S^TS$. Then
+The joint direction $\Omega=\sum_i\lambda_i(d_ix_i^T-x_id_i^T)$ factors as $\Omega=SJS^T$, where $a_i=\sqrt{|\lambda_i|}d_i$, $b_i=\mathrm{sgn}\,(\lambda_i)\sqrt{|\lambda_i|}x_i$, $S=[a_1,\ldots,a_m,b_1,\ldots,b_m]$, and $J=\begin{pmatrix}0&I\\-I&0\end{pmatrix}$. Let $K=S^TS$. Then
 
 $$
 T_t=t(I-tJK/2)^{-1}J,\qquad
-\operatorname{Cayley}(t\Omega)=I+ST_tS^T,\qquad
+\mathrm{Cayley}\,(t\Omega)=I+ST_tS^T,\qquad
 R_t=R+RST_tS^T.
 $$
 
 This exact reduction follows from $(I-aSJS^T)S=S(I-aJS^TS)$. The determinants also satisfy $\det(I-aSJS^T)=\det(I-aJS^TS)$, and the conjugate eigenvalue pairs of skew-symmetric $\Omega$ make this value positive for real step sizes. The expression also holds when the columns of $S$ are linearly dependent. Candidates with $2m<r$ can share the smaller $2m$-dimensional linear system. Prepare $D=R-I$, $P=S^TD^TGRS$, and $N=S^TR^TGRS$ before step-size search to obtain
 
 $$
-\mathcal E(R_t)=\mathcal E(R)+2\operatorname{tr}(PT_t)
-+\operatorname{tr}(T_t^TNT_tK).
+\mathcal E(R_t)=\mathcal E(R)+2\mathrm{tr}\,(PT_t)
++\mathrm{tr}\,(T_t^TNT_tK).
 $$
 
 At the initial $R=I$, the final positive quadratic term directly gives the edit cost. Per-candidate cost computation uses matrices of size $2m$. For $2m<r$, `ResponsePath` constructs $S,J,K,P,N$ and the reference cost once per step and shares them across five step sizes. For $2m\ge r$, it solves the $r$-dimensional Cayley system. When the incremental cost falls within a rounding bound computed from term magnitudes, it uses the stable quadratic form in `WeightMetric`. The accumulated rotation’s largest principal angle is checked under the existing angle contract.
@@ -273,16 +273,16 @@ $$
 Let $M=E_\perp^TGY_\perp=L\Sigma V^T$, $\sigma_1\ge\cdots\ge\sigma_{r-k}$, and $\delta=\det(VL^T)$. Then
 
 $$
-B_*=V\operatorname{diag}(1,\ldots,1,\delta)L^T,
+B_*=V\mathrm{diag}\,(1,\ldots,1,\delta)L^T,
 $$
 
 $$
 \min_B\mathcal E(R_B)
-=2\operatorname{tr}G-2\operatorname{tr}(E^TGY)
+=2\mathrm{tr}\,G-2\mathrm{tr}\,(E^TGY)
 -2\left(\sum_{i<r-k}\sigma_i+\delta\sigma_{r-k}\right).
 $$
 
-The proof splits $\operatorname{tr}(GR_B)=\operatorname{tr}(E^TGY)+\operatorname{tr}(MB)$ and maximizes the singular-value trace subject to the orientation constraint. When the completed $R_{B_*}$ satisfies the existing angle bound, it preserves observed scores with minimum weight-edit cost. Orthogonality to $U$ maintains protected states. At the start of search, `ObservedSpace` fixes the observation column space by selecting directions whose singular values exceed $\max(10^{-12},10^{-9}\sigma_{\max})$. At observation rank 0, the identity rotation attains the minimum; at rank $r$, the given rotation does.
+The proof splits $\mathrm{tr}\,(GR_B)=\mathrm{tr}\,(E^TGY)+\mathrm{tr}\,(MB)$ and maximizes the singular-value trace subject to the orientation constraint. When the completed $R_{B_*}$ satisfies the existing angle bound, it preserves observed scores with minimum weight-edit cost. Orthogonality to $U$ maintains protected states. At the start of search, `ObservedSpace` fixes the observation column space by selecting directions whose singular values exceed $\max(10^{-12},10^{-9}\sigma_{\max})$. At observation rank 0, the identity rotation attains the minimum; at rank $r$, the given rotation does.
 
 [`src/response.rs`](src/response.rs) computes cached costs, reduced Cayley systems, and minimum-cost completion. `CompactReadout` in [`src/diagnosis.rs`](src/diagnosis.rs) loads $F$ and reference scores once in GPU F32. It computes $(R-I)x$ in F64, converts it to F32, and evaluates it through the shared `Gpu::linear`. Both the final search rotation and the completed candidate are measured through the original GPU readout at every observed prefix. Completion is accepted when it preserves angle and cost bounds, all prefix argmax choices, already satisfied target margins, and protected-output tolerance, with scaled logit differences between the two candidates within tolerance. This check covers numerical rank truncation and F32 operation order. When the original candidate meets all acceptance conditions, the completed candidate must meet those same conditions. `completion` records costs before and after completion, observation rank, measured output differences, and whether completion was applied. `computation` records basis-output, compressed-output, and final-validation call counts; cost-construction counts; trials by rotation solver; and algebra timings for joint preparation, search, and completion.
 
@@ -366,7 +366,7 @@ C_a=-\int_0^1
 \dot\theta_a(t)\,dt
 $$
 
-The chain rule gives $\sum_a C_a=R_k(\theta(0))-R_k(\theta(1))$. All edited coordinates are included, with contributions that increase deviation retained as negative values. The path and weight groupings are part of the run conditions. Along a straight path, $\dot\theta=\Delta\theta$, and the loss derivative at a fixed readout prefix is $(\operatorname{softmax}(z)-e_y)h^T$. A straight path between endpoints satisfying $\Delta WC=0$ preserves protected scores. Orthogonality and output-row Gram preservation apply to the rotation path and final rotation.
+The chain rule gives $\sum_a C_a=R_k(\theta(0))-R_k(\theta(1))$. All edited coordinates are included, with contributions that increase deviation retained as negative values. The path and weight groupings are part of the run conditions. Along a straight path, $\dot\theta=\Delta\theta$, and the loss derivative at a fixed readout prefix is $(\mathrm{softmax}\,(z)-e_y)h^T$. A straight path between endpoints satisfying $\Delta WC=0$ preserves protected scores. Orthogonality and output-row Gram preservation apply to the rotation path and final rotation.
 
 [`src/attribution.rs`](src/attribution.rs) integrates the softmax derivative along the straight readout path and records the error between the contribution sum and measured loss reduction. Integration stops when the sum residual reaches tolerance; at the maximum subdivision count, it still records the measured residual and convergence status. Output-row contributions use actual F32 endpoint scores. Coordinate contributions within a row are reconstructed from F64 weight changes, with their difference from the row contribution recorded. The loss after reverting high-contribution rows to their original values is also computed. This row reversion specifies the finite intervention used for attribution. The accepted proposal contains the complete weight state of the joint rotation.
 
@@ -438,7 +438,7 @@ $$
 a_k=\frac{1-x_k}{1-x_1}
 $$
 
-를 적용한다. $\alpha$는 manifest의 고정 지수다. 실행기는 $\operatorname{expm1}$으로 가까운 기준점의 차를 계산한다.
+를 적용한다. $\alpha$는 manifest의 고정 지수다. 실행기는 $\mathrm{expm1}$으로 가까운 기준점의 차를 계산한다.
 
 ### 수치 주입과 출력 구별도
 
@@ -451,11 +451,11 @@ $$
 
 로 정하면 두 상태의 길이가 같고, 모든 탐색 방향의 주입 차이도 같다. 앞선 위치에는 embedding 행의 고정 혼합을 직접 공급한다. 입력 행 인덱스·기준 상태·기저·각도·주입 위치를 함께 저장한다. [`src/injection.rs`](src/injection.rs)는 seed로 embedding 행 쌍을 고르고 합으로 기준 상태를, 차이의 직교 투영으로 탐색 기저를 만든다. 혼합 계수는 각각 $1/\sqrt2$다. 실제 기저 크기는 embedding 차이의 rank에 맞춘다. `probe` 명령은 가중치·실행 설정을 적재하고 `Model::inject`로 수치 입력을 실행한다. `Case`의 prompt와 정답 문자열은 `diagnose` 입력 경로다. 두 입력 경로는 같은 decoder 연산을 사용한다.
 
-출력 점수 $z_\pm$, 확률 $p_\pm=\operatorname{softmax}(z_\pm)$, 차이 $\delta z=z_+-z_-$, $\delta p=p_+-p_-$에 대해 구별도를 다음처럼 정한다.
+출력 점수 $z_\pm$, 확률 $p_\pm=\mathrm{softmax}\,(z_\pm)$, 차이 $\delta z=z_+-z_-$, $\delta p=p_+-p_-$에 대해 구별도를 다음처럼 정한다.
 
 $$
 \mathcal D
-=\operatorname{KL}(p_+\Vert p_-)+\operatorname{KL}(p_-\Vert p_+)
+=\mathrm{KL}\,(p_+\Vert p_-)+\mathrm{KL}\,(p_-\Vert p_+)
 =\delta p^T\delta z.
 $$
 
@@ -463,7 +463,7 @@ $$
 
 $$
 \ell_i=\frac{p_{+,i}-p_{-,i}}{\log p_{+,i}-\log p_{-,i}},\qquad
-S=\operatorname{diag}(\ell)-\frac{\ell\ell^T}{\mathbf1^T\ell}
+S=\mathrm{diag}\,(\ell)-\frac{\ell\ell^T}{\mathbf1^T\ell}
 $$
 
 로 정의하면 실수 연산에서 $\delta p=S\delta z$, $\mathcal D=\delta z^TS\delta z$가 정확히 성립한다. 같은 확률의 로그평균은 그 확률값이다. 유도는 $\delta\log p_i=\delta z_i-\delta\log Z$, $\delta p_i=\ell_i\delta\log p_i$, $\sum_i\delta p_i=0$를 사용한다. 따라서 $\delta\log Z=\ell^T\delta z/(\mathbf1^T\ell)$다. $S$의 벡터 곱은 대각 곱과 두 내적으로 계산하며 시간·저장량은 vocabulary 크기에 선형이다. 가까운 확률은 log-softmax 차이와 `expm1`의 연속 극한으로 계산한다.
@@ -473,18 +473,18 @@ $$
 탐색 기저 $v_1,\ldots,v_r$에서 실행한 점수 차이를 $Y=[\delta z_1,\ldots,\delta z_r]$라 하고 기준 확률을 $p_0$라 둔다. 작은 행렬
 
 $$
-K=Y^T\bigl(\operatorname{diag}(p_0)-p_0p_0^T\bigr)Y
+K=Y^T\bigl(\mathrm{diag}\,(p_0)-p_0p_0^T\bigr)Y
 $$
 
 의 최소 고유벡터 $c$로 다음 주입 방향 $v=\sum_i c_iv_i$를 정한다. 이 고유문제는 기록한 기저 응답의 선형 결합을 비교하는 국소 모형이다. 선택한 방향은 두 실제 decoder 실행으로 다시 측정해 유한한 $\mathcal D$를 얻는다. 기저에서 관측한 최소 구별도와 비교해 실제 값이 작은 방향을 채택한다. 방향 탐색에는 $2r$개의 해당 위치 실행과 $r\times r$ 고유문제를 사용한다. 선택한 쌍의 층별 추적에는 두 실행의 관측값을 사용한다.
 
 ### 잔차 분기와 좌표 기여
 
-층별 상쇄를 추적할 때 attention 출력과 MLP 출력의 선형 부분을 $B_b a_b$로 모으면 두 실행의 최종 residual 차이는 $\delta r_L=\delta x+\sum_b B_b\delta a_b$다. 고정 projection bias는 두 실행에서 같은 값을 더한다. 최종 RMSNorm $N(r)=\operatorname{diag}(g)r/s$, $s=\sqrt{\|r\|^2/d+\eta}$의 두 끝점에는 다음 유한 차이 행렬을 사용한다.
+층별 상쇄를 추적할 때 attention 출력과 MLP 출력의 선형 부분을 $B_b a_b$로 모으면 두 실행의 최종 residual 차이는 $\delta r_L=\delta x+\sum_b B_b\delta a_b$다. 고정 projection bias는 두 실행에서 같은 값을 더한다. 최종 RMSNorm $N(r)=\mathrm{diag}\,(g)r/s$, $s=\sqrt{\|r\|^2/d+\eta}$의 두 끝점에는 다음 유한 차이 행렬을 사용한다.
 
 $$
 \bar r=\tfrac12(r_++r_-),\qquad
-T_N=\operatorname{diag}(g)\left[
+T_N=\mathrm{diag}\,(g)\left[
 \tfrac12(s_+^{-1}+s_-^{-1})I
 -\frac{2\bar r\bar r^T}{d\,s_+s_-(s_++s_-)}\right].
 $$
@@ -500,7 +500,7 @@ $$
 
 ### 구별도를 높이는 보호 회전
 
-수정 방향은 선택한 두 최종 hidden $h_\pm$의 구별도를 증가시키도록 계산한다. 보호 공간 $C$에는 원본 보호 벡터, 수치 대조 상태와 $\bar h=(h_++h_-)/2$를 넣는다. 그 여공간 투영을 $P_C$, $F_\pm=\operatorname{diag}(p_\pm)-p_\pm p_\pm^T$라 하면
+수정 방향은 선택한 두 최종 hidden $h_\pm$의 구별도를 증가시키도록 계산한다. 보호 공간 $C$에는 원본 보호 벡터, 수치 대조 상태와 $\bar h=(h_++h_-)/2$를 넣는다. 그 여공간 투영을 $P_C$, $F_\pm=\mathrm{diag}\,(p_\pm)-p_\pm p_\pm^T$라 하면
 
 $$
 a_h=P_C(h_+-h_-),\qquad
@@ -541,7 +541,7 @@ $J^T=-J$, $J^2=-P$, $P^2=P$로부터 $Q^TQ=I$를 얻는다. 따라서 실수 연
 
 $$
 W'C=WC,\qquad W'W'^T=WW^T,\qquad
-\operatorname{rank}(W'-W)\le2.
+\mathrm{rank}\,(W'-W)\le2.
 $$
 
 보호 접두사의 전체 vocabulary 점수와 출력 행벡터 사이의 내적이 유지된다. 회전은 $u,v$가 만드는 평면에서만 작용한다. [`src/rotation.rs`](src/rotation.rs)는 두 번의 직교 투영으로 보호 공간의 기저를 구성하며 상대 rank 기준은 $10^{-10}$이다.
@@ -569,7 +569,7 @@ $$
 K=J\Pi J^T.
 $$
 
-$r\in\operatorname{range}(K)$인 선형 조건 $J\Delta w=r,\ B\Delta w=0$에서
+$r\in\mathrm{range}\,(K)$인 선형 조건 $J\Delta w=r,\ B\Delta w=0$에서
 
 $$
 \lambda=K^\dagger r,\qquad
@@ -596,7 +596,7 @@ $$
 
 ### Readout의 공동 회전
 
-현재 readout 회전에는 같은 응답식을 직접 적용할 수 있다. 보호 공간에 직교 투영한 $\bar d_i,\bar h_i$로 $A_i=\bar d_i\bar h_i^T-\bar h_i\bar d_i^T$를 만들고, 반대칭 행렬의 내적을 $\langle A,B\rangle=\tfrac12\operatorname{tr}(A^TB)$로 정하면
+현재 readout 회전에는 같은 응답식을 직접 적용할 수 있다. 보호 공간에 직교 투영한 $\bar d_i,\bar h_i$로 $A_i=\bar d_i\bar h_i^T-\bar h_i\bar d_i^T$를 만들고, 반대칭 행렬의 내적을 $\langle A,B\rangle=\tfrac12\mathrm{tr}\,(A^TB)$로 정하면
 
 $$
 K_{ij}
@@ -621,27 +621,27 @@ $$
 $$
 z_R=z_0+F(R-I)x,\qquad
 \mathcal E(R)=\|W'-W\|_F^2
-=\operatorname{tr}((R-I)^TG(R-I))
-=2\operatorname{tr}G-2\operatorname{tr}(GR).
+=\mathrm{tr}\,((R-I)^TG(R-I))
+=2\mathrm{tr}\,G-2\mathrm{tr}\,(GR).
 $$
 
 $U^TU=I$와 $R^TR=I$가 이 항등식의 조건이다. 기저와 원본 가중치를 고정한 동안 $F,G,z_0,x$를 공유한다. 첫 Gram 구성은 $O(Vr^2)$, 이후 안정적인 이차형식 비용은 $O(r^3)$, trace 비용은 $O(r^2)$다. 출력 평가의 행렬 폭은 $d$에서 $r$로 줄어든다. 작은 회전의 비용에는 이차형식을 사용해 양의 작은 변화량을 직접 계산한다. GPU F32의 곱 순서와 저장 반올림 오차는 원본 readout 측정값과 대조한다.
 
 ### Cayley 연립방정식의 축소
 
-공동 방향 $\Omega=\sum_i\lambda_i(d_ix_i^T-x_id_i^T)$는 $a_i=\sqrt{|\lambda_i|}d_i$, $b_i=\operatorname{sgn}(\lambda_i)\sqrt{|\lambda_i|}x_i$, $S=[a_1,\ldots,a_m,b_1,\ldots,b_m]$, $J=\begin{pmatrix}0&I\\-I&0\end{pmatrix}$로 $\Omega=SJS^T$가 된다. $K=S^TS$라 두면
+공동 방향 $\Omega=\sum_i\lambda_i(d_ix_i^T-x_id_i^T)$는 $a_i=\sqrt{|\lambda_i|}d_i$, $b_i=\mathrm{sgn}\,(\lambda_i)\sqrt{|\lambda_i|}x_i$, $S=[a_1,\ldots,a_m,b_1,\ldots,b_m]$, $J=\begin{pmatrix}0&I\\-I&0\end{pmatrix}$로 $\Omega=SJS^T$가 된다. $K=S^TS$라 두면
 
 $$
 T_t=t(I-tJK/2)^{-1}J,\qquad
-\operatorname{Cayley}(t\Omega)=I+ST_tS^T,\qquad
+\mathrm{Cayley}\,(t\Omega)=I+ST_tS^T,\qquad
 R_t=R+RST_tS^T.
 $$
 
 이는 $(I-aSJS^T)S=S(I-aJS^TS)$에서 얻는 정확한 축소다. 행렬식도 $\det(I-aSJS^T)=\det(I-aJS^TS)$이며, 반대칭 $\Omega$의 켤레 고유값 쌍 때문에 실수 보폭에서 이 값은 양수다. $S$의 열이 선형 종속인 경우에도 식이 성립한다. $2m<r$인 후보군은 작은 $2m$차원 연립방정식을 공유할 수 있다. $D=R-I$, $P=S^TD^TGRS$, $N=S^TR^TGRS$를 보폭 탐색 전에 준비하면
 
 $$
-\mathcal E(R_t)=\mathcal E(R)+2\operatorname{tr}(PT_t)
-+\operatorname{tr}(T_t^TNT_tK).
+\mathcal E(R_t)=\mathcal E(R)+2\mathrm{tr}\,(PT_t)
++\mathrm{tr}\,(T_t^TNT_tK).
 $$
 
 초기 $R=I$에서는 마지막 양의 이차항이 수정 비용을 직접 준다. 후보별 비용 계산에 필요한 행렬 크기는 $2m$이다. `ResponsePath`는 $2m<r$에서 $S,J,K,P,N$과 기준 비용을 단계마다 한 번 구성하고 다섯 보폭이 공유한다. $2m\ge r$이면 $r$차원 Cayley 식을 푼다. 증분 비용이 항별 크기로 계산한 반올림 범위에 들어가면 `WeightMetric`의 안정적인 이차형식으로 평가한다. 누적 회전의 최대 주각은 현재 각도 계약으로 판정한다.
@@ -657,15 +657,15 @@ $$
 로 표현된다. $M=E_\perp^TGY_\perp=L\Sigma V^T$, $\sigma_1\ge\cdots\ge\sigma_{r-k}$, $\delta=\det(VL^T)$라 두면
 
 $$
-B_*=V\operatorname{diag}(1,\ldots,1,\delta)L^T,
+B_*=V\mathrm{diag}\,(1,\ldots,1,\delta)L^T,
 $$
 $$
 \min_B\mathcal E(R_B)
-=2\operatorname{tr}G-2\operatorname{tr}(E^TGY)
+=2\mathrm{tr}\,G-2\mathrm{tr}\,(E^TGY)
 -2\left(\sum_{i<r-k}\sigma_i+\delta\sigma_{r-k}\right).
 $$
 
-증명은 $\operatorname{tr}(GR_B)=\operatorname{tr}(E^TGY)+\operatorname{tr}(MB)$를 분리하고 방향 제약을 둔 특이값 trace 최댓값을 구하는 것이다. 완성한 $R_{B_*}$가 기존 각도 상한 안에 있으면 같은 관측 점수와 최소 가중치 수정 비용을 함께 얻는다. 보호 상태는 $U$에 직교하는 조건으로 유지한다. `ObservedSpace`는 변화 대상 좌표의 특이값이 $\max(10^{-12},10^{-9}\sigma_{\max})$보다 큰 방향을 선택해 관측 열공간을 탐색 시작 시 고정한다. 관측 rank가 0이면 항등 회전, $r$이면 주어진 회전이 최솟값을 준다.
+증명은 $\mathrm{tr}\,(GR_B)=\mathrm{tr}\,(E^TGY)+\mathrm{tr}\,(MB)$를 분리하고 방향 제약을 둔 특이값 trace 최댓값을 구하는 것이다. 완성한 $R_{B_*}$가 기존 각도 상한 안에 있으면 같은 관측 점수와 최소 가중치 수정 비용을 함께 얻는다. 보호 상태는 $U$에 직교하는 조건으로 유지한다. `ObservedSpace`는 변화 대상 좌표의 특이값이 $\max(10^{-12},10^{-9}\sigma_{\max})$보다 큰 방향을 선택해 관측 열공간을 탐색 시작 시 고정한다. 관측 rank가 0이면 항등 회전, $r$이면 주어진 회전이 최솟값을 준다.
 
 [`src/response.rs`](src/response.rs)는 캐시한 비용, 축소 Cayley, 최소 비용 완성을 계산한다. [`src/diagnosis.rs`](src/diagnosis.rs)의 `CompactReadout`은 $F$와 기준 점수를 GPU F32로 한 번 적재하고, F64로 계산한 $(R-I)x$를 F32로 변환해 공통 `Gpu::linear`로 평가한다. 탐색의 최종 회전과 완성 후보는 모든 관측 접두사에서 원본 GPU readout으로 측정한다. 완성 후보가 각도·비용 상한, 모든 접두사의 argmax, 이미 만족한 목표 margin, 보호 출력 오차를 유지하고 두 후보 사이의 scaled logit 차이가 허용 오차 이내이면 완성을 채택한다. 이 판정은 수치 rank 절단과 F32 연산 순서의 영향을 포함한다. 기존 후보가 전체 채택 조건을 만족하면 완성 후보에도 같은 조건을 적용한다. 결과의 `completion`은 비용 전후·관측 rank·실제 출력 차이·적용 여부를 기록한다. `computation`은 기저 출력·압축 출력·최종 검증 호출 수, 비용 구성 횟수, 회전 해법별 시행 수와 공동 준비·탐색·완성 대수 계산 시간을 기록한다.
 
@@ -749,7 +749,7 @@ C_a=-\int_0^1
 \dot\theta_a(t)\,dt
 $$
 
-로 정의하면 연쇄법칙에 의해 $\sum_a C_a=R_k(\theta(0))-R_k(\theta(1))$이다. 모든 수정 좌표를 포함하며, 편차를 증가시킨 기여는 음수로 보존한다. 경로와 가중치 묶음을 실행 조건에 포함한다. 직선 경로에서는 $\dot\theta=\Delta\theta$이고, 고정 readout 접두사의 손실 미분은 $(\operatorname{softmax}(z)-e_y)h^T$이다. $\Delta WC=0$인 두 끝점의 직선 경로는 보호 점수를 유지한다. 직교성과 출력 행 Gram의 보존은 회전 경로와 최종 회전에 적용한다.
+로 정의하면 연쇄법칙에 의해 $\sum_a C_a=R_k(\theta(0))-R_k(\theta(1))$이다. 모든 수정 좌표를 포함하며, 편차를 증가시킨 기여는 음수로 보존한다. 경로와 가중치 묶음을 실행 조건에 포함한다. 직선 경로에서는 $\dot\theta=\Delta\theta$이고, 고정 readout 접두사의 손실 미분은 $(\mathrm{softmax}\,(z)-e_y)h^T$이다. $\Delta WC=0$인 두 끝점의 직선 경로는 보호 점수를 유지한다. 직교성과 출력 행 Gram의 보존은 회전 경로와 최종 회전에 적용한다.
 
 [`src/attribution.rs`](src/attribution.rs)는 readout 직선 경로의 softmax 미분을 적분하고 기여 합과 실제 손실 감소량의 오차를 기록한다. 적분은 합의 잔차가 허용값에 도달하면 끝내며, 최대 분할 수에서도 측정한 잔차와 수렴 상태를 남긴다. 출력 행의 기여는 실제 F32 끝점 점수를 사용한다. 해당 행 안의 좌표 기여는 F64 가중치 변화량으로 복원하고 행 기여와의 차이를 함께 기록한다. 기여가 큰 행의 수정을 원래 값으로 되돌린 손실도 계산한다. 이 행 되돌림은 기여 분석의 유한 개입 조건이다. 채택하는 수정안은 공동 회전의 전체 가중치 상태다.
 
