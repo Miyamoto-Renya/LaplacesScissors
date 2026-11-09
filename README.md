@@ -4,6 +4,7 @@
 [![Rust](https://img.shields.io/badge/Built_with-Rust-000000?logo=rust)](Cargo.toml)
 [![Triton 3.8](https://img.shields.io/badge/Kernels-Triton_3.8-555555)](kernels/ops.py)
 [![CUDA / HIP](https://img.shields.io/badge/Backends-CUDA_%2F_HIP-76B900)](src/device.rs)
+[![tests](https://github.com/Miyamoto-Renya/LaplacesScissors/actions/workflows/tests.yml/badge.svg)](https://github.com/Miyamoto-Renya/LaplacesScissors/actions/workflows/tests.yml)
 
 [Source](https://github.com/Miyamoto-Renya/LaplacesScissors) · [Issues](https://github.com/Miyamoto-Renya/LaplacesScissors/issues) · [Discussions](https://github.com/Miyamoto-Renya/LaplacesScissors/discussions)
 
@@ -214,7 +215,7 @@ export LAPLACE_TEST_MODEL="$LAPLACE_CACHE/models/Qwen--Qwen3-0.6B/<commit>"
 cargo test --release --test qwen_reference -- --ignored --nocapture
 ```
 
-`<commit>`은 `fetch`가 고정한 commit SHA 폴더 이름입니다. 기본 검사는 열린 구간의 경계·단일점 해, 보호 회전, 공동 응답, 기여 합과 규모 편차, softmax와 RMSNorm·LayerNorm의 유한 차이 항등식을 확인합니다. 전체 모델 GPU 검사는 접두사 검증과 재생성의 일치, 원본 해시, KV 되감기, 공유 readout과 세 합성 checkpoint의 규모 분석을 확인합니다. 수치 주입 검사는 embedding scale을 포함한 토큰 경로와 직접 입력의 일치, 좌표 개입의 분리, 구별도 수정안 저장과 전체 decoder 재실행을 확인합니다. compiler 검사는 수집한 연산 계약으로 CUDA code object를 만듭니다. Qwen 검사는 원본 순전파를 독립 Rust 전체 문맥 계산과 대조합니다. 변경한 연산 범위에 맞는 검사를 실행하며 결과는 외부 검사 캐시에 저장합니다.
+`<commit>`은 `fetch`가 고정한 commit SHA 폴더 이름입니다. GitHub Actions는 `main` 푸시와 풀 리퀘스트에서 `cargo test --locked`로 기본 검사를 실행합니다. GPU 통합 검사, compiler 검사, Qwen 참조 검사는 위 명령으로 따로 실행합니다. 기본 검사는 열린 구간의 경계·단일점 해, 보호 회전, 공동 응답, 기여 합과 규모 편차, softmax와 RMSNorm·LayerNorm의 유한 차이 항등식을 확인합니다. 전체 모델 GPU 검사는 접두사 검증과 재생성의 일치, 원본 해시, KV 되감기, 공유 readout과 세 합성 checkpoint의 규모 분석을 확인합니다. 수치 주입 검사는 embedding scale을 포함한 토큰 경로와 직접 입력의 일치, 좌표 개입의 분리, 구별도 수정안 저장과 전체 decoder 재실행을 확인합니다. compiler 검사는 수집한 연산 계약으로 CUDA code object를 만듭니다. Qwen 검사는 원본 순전파를 독립 Rust 전체 문맥 계산과 대조합니다. 변경한 연산 범위에 맞는 검사를 실행하며 결과는 외부 검사 캐시에 저장합니다.
 
 </details>
 
@@ -374,7 +375,7 @@ export LAPLACE_TEST_MODEL="$LAPLACE_CACHE/models/Qwen--Qwen3-0.6B/<commit>"
 cargo test --release --test qwen_reference -- --ignored --nocapture
 ```
 
-`<commit>` is the commit SHA directory recorded by `fetch`. Default tests check open-interval boundaries and singleton solutions, protected rotations, joint responses, contribution sums and scaling deviations, and finite-difference identities for softmax, RMSNorm, and LayerNorm. Full-model GPU tests check agreement between prefix validation and regeneration, original hashes, KV rewind, shared readout, and scaling analysis over three synthetic checkpoints. Numerical-injection tests check agreement between token and direct-input paths including embedding scaling, separation of coordinate interventions, divergence-proposal storage, and full-decoder replay. The compiler test builds CUDA code objects from collected operation contracts. The Qwen test compares the original forward pass with an independent Rust full-context calculation. Run checks appropriate to the changed operations and store results in an external test cache.
+`<commit>` is the commit SHA directory recorded by `fetch`. GitHub Actions runs `cargo test --locked` on pushes to `main` and on pull requests. The GPU integration tests, the compiler test, and the Qwen reference test stay on the commands above. Default tests check open-interval boundaries and singleton solutions, protected rotations, joint responses, contribution sums and scaling deviations, and finite-difference identities for softmax, RMSNorm, and LayerNorm. Full-model GPU tests check agreement between prefix validation and regeneration, original hashes, KV rewind, shared readout, and scaling analysis over three synthetic checkpoints. Numerical-injection tests check agreement between token and direct-input paths including embedding scaling, separation of coordinate interventions, divergence-proposal storage, and full-decoder replay. The compiler test builds CUDA code objects from collected operation contracts. The Qwen test compares the original forward pass with an independent Rust full-context calculation. Run checks appropriate to the changed operations and store results in an external test cache.
 
 </details>
 
